@@ -1,5 +1,14 @@
 $(document).ready(function() {
 	
+	// Initialize datepicker
+    $('#invoice_date').flatpickr({
+        enableTime: false,
+        dateFormat: 'Y-m-d',           // Database format
+        altInput: true,                // Show alternative input
+        altFormat: 'Y. M. d',      // Display format based on language
+        maxDate: 'today',              // Can't select future dates
+	});
+	
 	$('#createInvoice').on('submit', function(event) {
 		event.preventDefault();
 		
@@ -54,7 +63,9 @@ $(document).ready(function() {
 					showDynamicIsland(translations.invoice + " " + translations.upload_success, "upload");
 					
 					// Refresh invoice list if function exists
-					table.ajax.reload();
+					if (typeof window.invoicesTable !== 'undefined') {
+						window.invoicesTable.ajax.reload(null, false); // false means don't reset paging
+					}
 					
 					// Clear the form
 					$('#createInvoice')[0].reset();

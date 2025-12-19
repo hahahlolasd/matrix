@@ -48,6 +48,7 @@
 	'create_invoice_form'		=> ['invoices'],
 	'create_invoice'			=> ['invoices'],
 	'get_invoices'				=> ['invoices'],
+	'invoice_modal'				=> ['invoices'],
 	
 	];
 	
