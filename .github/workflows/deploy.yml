@@ -20,4 +20,4 @@ jobs:
           username: ${{ secrets.TOX13_FTP_USERNAME }}  # Your FTP username from GitHub secrets
           password: ${{ secrets.TOX13_FTP_PASSWORD }}  # Your FTP password from GitHub secrets
           local-dir: "./"  # Local directory (your project folder)
-          server-dir: "./matrix.tox13.com/"  # Remote directory (where to upload files)
+          server-dir: "./matrix.tox13.com/"  # Remote directory (where to upload files) 
