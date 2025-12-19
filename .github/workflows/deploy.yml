@@ -3,7 +3,7 @@ name: FTP Deploy
 on:
   push:
     branches:
-      - main  # This triggers deployment on pushes to the 'main' branch
+      - main
 
 jobs:
   ftp-deploy:
@@ -11,13 +11,29 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2  # This pulls the code from your repo
+        uses: actions/checkout@v4
 
+      - name: Debug secrets in detail
+        env:
+          SERVER_SECRET: ${{ secrets.TOX13_FTP_SERVER }}
+          USERNAME_SECRET: ${{ secrets.TOX13_FTP_USERNAME }}
+          PASSWORD_SECRET: ${{ secrets.TOX13_FTP_PASSWORD }}
+        run: |
+          echo "=== Checking Secrets ==="
+          echo "Server secret length: ${#SERVER_SECRET}"
+          echo "Username secret length: ${#USERNAME_SECRET}"
+          echo "Password secret length: ${#PASSWORD_SECRET}"
+          echo ""
+          echo "Is server secret empty? $([ -z "$SERVER_SECRET" ] && echo "YES" || echo "NO")"
+          echo ""
+          echo "All environment variables (filtered):"
+          env | grep -i secret || echo "No secret-related env vars found"
+          
       - name: Upload to FTP server
-        uses: SamKirkland/FTP-Deploy-Action@4.1.0
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
-          server: "${{ secrets.TOX13_FTP_SERVER }}"  # Your FTP server URL
-          username: ${{ secrets.TOX13_FTP_USERNAME }}  # Your FTP username from GitHub secrets
-          password: ${{ secrets.TOX13_FTP_PASSWORD }}  # Your FTP password from GitHub secrets
-          local-dir: "./"  # Local directory (your project folder)
-          server-dir: "./matrix.tox13.com/"  # Remote directory (where to upload files) 
+          server: ${{ secrets.TOX13_FTP_SERVER }}
+          username: ${{ secrets.TOX13_FTP_USERNAME }}
+          password: ${{ secrets.TOX13_FTP_PASSWORD }}
+          local-dir: "./"
+          server-dir: "./matrix.tox13.com/"
