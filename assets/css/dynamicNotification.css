@@ -1,0 +1,69 @@
+.dynamic-island {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%) scale(1);
+    color: #fff;
+    padding: 2px 10px;
+    font-size: 20px;
+    font-weight: bold;
+    height: 2px;
+    width: 0;
+    opacity: 1;
+    border-radius: 0 0 20px 20px;
+    transition: height 0.4s ease-out, 
+	width 0.6s 0.4s ease-out, 
+	transform 0.3s ease-out, 
+	border-radius 1.5s ease-out,
+	padding 0.6s ease-out;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    z-index: 9999;
+    text-align: center;
+    overflow: hidden;
+}
+
+.dynamic-island.success {
+    background-color: green;
+}
+
+.dynamic-island.error {
+    background-color: red;
+}
+
+.dynamic-island.info {
+    background-color: blue;
+}
+
+.dynamic-island.warning {
+    background-color: orange;
+}
+
+.dynamic-island.active {
+    height: 60px;
+    width: 100vw; 
+    transform: translateX(-50%) scale(1); 
+    border-radius: 0;
+    padding: 15px 10px;
+}
+
+.dynamic-island.leaving {
+    height: 2px;
+    width: 100vw;
+    opacity: 0;
+    padding: 2px 10px;
+    border-radius: 0 0 20px 20px;
+    transition: height 0.4s ease-in,
+	transform 0.3s ease-in, 
+	opacity 0.6s ease-in,
+	border-radius 1.5s ease-in,
+	padding 0.6s ease-in;
+}
+
+.dynamic-island span {
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out .5s;
+}
+
+.dynamic-island.active span {
+    opacity: 1;
+}

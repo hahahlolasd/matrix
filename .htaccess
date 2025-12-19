@@ -1,0 +1,45 @@
+#ERROR 404 REDIRECT
+#ErrorDocument 404 ????????
+
+#TURN MOD_REWRITE ON
+
+RewriteBase /
+RewriteEngine On
+Options +MultiViews
+Options +FollowSymLinks
+
+#FORCE SSL
+
+#RewriteCond %{HTTPS} off
+#RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+#FORCE NON-WWW
+#CHANGE EXAMPLE.COM TO YOUR DOMAIN
+
+#RewriteCond %{HTTP_HOST} ^www\.404\.rs [NC]
+#RewriteRule ^(.*)$ https://example.com/$1 [L,R=301]
+
+# REMOVE .HTML FROM URL
+
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.html -f
+RewriteRule ^(.*)$ $1.html [NC,L]
+
+# REMOVE .PHP FROM URL
+
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule !.*\.php$ %{REQUEST_FILENAME}.php [L]
+
+# CACHE SETTINGS
+
+#Header set Cache-Control "max-age=10, public"
+
+#order deny,allow
+#deny from all
+
+#SFT
+#allow from 178.222.125.118
+#allow from 79.101.93.50
+
+#XAMPP
+#allow from ::1

@@ -1,0 +1,23 @@
+name: FTP Deploy
+
+on:
+  push:
+    branches:
+      - main  # This triggers deployment on pushes to the 'main' branch
+
+jobs:
+  ftp-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2  # This pulls the code from your repo
+
+      - name: Upload to FTP server
+        uses: SamKirkland/FTP-Deploy-Action@4.1.0
+        with:
+          server: ${{ secrets.TOX13_FTP_SERVER }}"  # Your FTP server URL
+          username: ${{ secrets.TOX13_FTP_USERNAME }}  # Your FTP username from GitHub secrets
+          password: ${{ secrets.TOX13_FTP_PASSWORD }}  # Your FTP password from GitHub secrets
+          local-dir: "./"  # Local directory (your project folder)
+          server-dir: "./matrix.tox13.com/"  # Remote directory (where to upload files)
