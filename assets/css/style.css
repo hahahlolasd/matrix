@@ -85888,3 +85888,35 @@ table.dataTable {
 .lb-nav a {
     outline: none;
 }
+
+.modal-thead {
+	background-color: var(--matrix-red);
+}
+
+.modal-table td,
+.modal-table tr {
+	border-width: 1px;
+}
+
+.modal-thead th {
+	padding: 5px 10px !important;
+	font-size: 14px !important;
+}
+
+/* Fix Select2 inside modals */
+.select2-container--open {
+    z-index: 999999 !important;
+}
+
+.select2-dropdown {
+    z-index: 999999 !important;
+}
+
+/* If you're using Bootstrap 5 modal */
+.modal {
+    z-index: 1055;
+}
+
+.modal-backdrop {
+    z-index: 1050;
+}

@@ -60,8 +60,8 @@ $(function () {
 			}
             
             // Trigger table refresh
-            if (typeof table !== 'undefined') {
-                table.draw();
+			if (window.invoicesTable) {
+				window.invoicesTable.draw();
 			}
 		}
 	});
@@ -91,8 +91,8 @@ $(function () {
 			}
             
             // Trigger table refresh
-            if (typeof table !== 'undefined') {
-                table.draw();
+			if (window.invoicesTable) {
+				window.invoicesTable.draw();
 			}
 		}
 	});
@@ -165,6 +165,7 @@ $(function () {
 					<i class="bi bi-eye dt-icon view-icon" 
 					data-id="${row.id}" 
 					data-filename="${row.file}" 
+					data-date="${row.date}"
 					title="${translations.view}"></i>
 					<i class="bi bi-trash dt-icon delete-icon" 
 					data-id="${row.id}" 
@@ -213,105 +214,201 @@ $(function () {
 		document.body.removeChild(link);
 	});
 	
+	// Create and inject the modal HTML dynamically
+    function createDailyItemsModal() {
+		const modalHTML = `
+		<div class="modal fade" id="viewInvoiceModal" tabindex="-1" aria-labelledby="viewInvoiceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+		<div class="modal-content">
+		<div class="modal-header">
+		<h5 class="modal-title" id="viewInvoiceModalLabel"><i class="bi bi-list-check me-2"></i></h5>
+		<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="${translations.close}"></button>
+		</div>
+		<div class="modal-body p-0">
+		<div id="modalBodyContent">
+		
+		<!-- Daily Summary Bar -->
+		<div class="bg-light p-3 border-bottom">
+		<div class="row">
+		
+		<div class="col-md-4">
+		<small class="text-muted d-block">${translations.date}</small>
+		<strong id="modalDate"></strong>
+		</div>
+		
+		<div class="col-md-4">
+		<small class="text-muted d-block">${translations.total_price}</small>
+		<strong id="modalDailyTotal">0.00</strong>
+		</div>
+		
+		<div class="col-md-4">
+		<select id="cashRegisterFilter" class="form-select select2"></select>
+		</div>
+		
+		</div>
+		</div>
+		
+		<!-- Items Table -->
+		<div class="px-3 py-1">
+		<div class="table-responsive table-striped modal-table">
+		<table class="table table-sm table-hover mb-0" id="dailyItemsTable">
+		<thead class="modal-thead">
+		<tr>
+		<th width="5%">#</th>
+		<th width="45%">${translations.product_name}</th>
+		<th width="15%" class="text-end">${translations.quantity}</th>
+		<th width="15%" class="text-end">${translations.unit_price}</th>
+		<th width="20%" class="text-end">${translations.total_price}</th>
+		</tr>
+		</thead>
+		<tbody id="dailyItemsBody">
+		<!-- Items will be populated here -->
+		</tbody>
+		<tfoot class="table-light">
+		<tr>
+		<td colspan="4" class="text-end fw-bold">${translations.grand_total}:</td>
+		<td class="text-end fw-bold" id="grandTotal">0.00</td>
+		</tr>
+		</tfoot>
+		</table>
+		</div>
+		
+		<!-- Empty state -->
+		<div id="emptyState" class="text-center py-5 d-none">
+		<i class="bi bi-inbox fs-1 text-muted mb-3"></i>
+		<p class="text-muted">${translations.no_items_found}</p>
+		</div>
+		
+		<!-- Loading state -->
+		<div id="loadingState" class="text-center py-5">
+		<div class="spinner-border text-primary" role="status">
+		<span class="visually-hidden">${translations.loading}</span>
+		</div>
+		<p class="mt-2">${translations.loading}</p>
+		</div>
+		</div>
+		</div>
+		<div class="modal-footer">
+		<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">${translations.close}</button>
+		</div>
+		</div>
+        </div>
+		</div>
+		</div>
+		
+		`;
+		
+		$('#dailyItemsModalContainer').html(modalHTML);
+	}
+    
+    // Call this function to create the modal
+    createDailyItemsModal();
+    
+    // Global variables to store data
+	let currentDailyData = null;
+	let currentFilename = null;
+	
 	// Handle view button click
 	$(document).on('click', '.view-icon', function() {
-		var invoiceId = $(this).data('id');
-		var filename = $(this).data('filename');
+		currentFilename = $(this).data('filename');
+		var invoiceDate = $(this).data('date');
 		
 		// Show loading state
-		$('#viewInvoiceModal .modal-body').html(`
-			<div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-			<span class="visually-hidden">Loading...</span>
-            </div>
-            <p class="mt-2">Loading invoice details...</p>
-			</div>
-		`);
-		
-		// Fetch invoice details
-		$.ajax({
-			url: 'includes/invoices/get_invoice_details.php',
-			type: 'GET',
-			data: { 
-				id: invoiceId,
-				filename: filename,
-				lang: userLang
-			},
-			dataType: 'json',
-			success: function(response) {
-				if (response.success) {
-					// First, replace the entire modal body with the actual content structure
-					$('#viewInvoiceModal .modal-body').html(`
-						<!-- Daily Summary Bar -->
-						<div class="bg-light p-3 border-bottom">
-						<div class="row">
-						<div class="col-md-4">
-                        <small class="text-muted d-block">Date</small>
-                        <strong id="modalDate">-</strong>
-						</div>
-						<div class="col-md-4">
-                        <small class="text-muted d-block">Total Items</small>
-                        <strong id="modalItemCount">0</strong>
-						</div>
-						<div class="col-md-4">
-                        <small class="text-muted d-block">Total Amount</small>
-                        <strong id="modalDailyTotal">0.00</strong>
-						</div>
-						</div>
-						</div>
-						
-						<!-- Items Table -->
-						<div class="p-3">
-						<div class="table-responsive">
-						<table class="table table-sm table-hover mb-0" id="dailyItemsTable">
-                        <thead>
-						<tr class="table-light">
-						<th width="5%">#</th>
-						<th width="45%">Item Name</th>
-						<th width="15%" class="text-end">Quantity</th>
-						<th width="15%" class="text-end">Unit Price</th>
-						<th width="20%" class="text-end">Total</th>
-						</tr>
-                        </thead>
-                        <tbody id="dailyItemsBody">
-						<!-- Items will be populated here -->
-                        </tbody>
-                        <tfoot class="table-light">
-						<tr>
-						<td colspan="4" class="text-end fw-bold">Grand Total:</td>
-						<td class="text-end fw-bold" id="grandTotal">0.00</td>
-						</tr>
-                        </tfoot>
-						</table>
-						</div>
-						
-						<!-- Empty state -->
-						<div id="emptyState" class="text-center py-5 d-none">
-						<i class="bi bi-inbox fs-1 text-muted mb-3"></i>
-						<p class="text-muted">No items found for this day</p>
-						</div>
-						</div>
-					`);
-					
-					// Now populate the data
-					populateInvoiceModal(response.data);
-					} else {
-					showError('Failed to load invoice details: ' + (response.message || 'Unknown error'));
-				}
-			},
-			error: function(xhr, status, error) {
-				console.error('AJAX Error:', error, xhr.responseText); // Debug log
-				showError('Error loading invoice details: ' + error);
-			}
-		});
+		showLoadingState();
 		
 		// Show the modal
 		var modal = new bootstrap.Modal(document.getElementById('viewInvoiceModal'));
 		modal.show();
+		
+		// Store the date in the modal for later use
+		$('#viewInvoiceModal').data('invoice-date', invoiceDate);
+		
+		// Fetch cash registers
+		loadCashRegisters(currentFilename, invoiceDate);
 	});
 	
-	// Function to populate the modal with daily items
-	function populateInvoiceModal(dailyData) {
+	function loadCashRegisters(filename, invoiceDate) {
+		$.ajax({
+			url: 'includes/invoices/get_cash_registers.php',
+			type: 'GET',
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					cashRegistersList = response.cash_registers; // store the full list
+					populateCashRegisterFilter(cashRegistersList);
+					
+					// Load items for "all" by default
+					if (currentFilename && $('#viewInvoiceModal').data('invoice-date')) {
+						showLoadingState();
+						loadDailyItems(
+							currentFilename,
+							$('#viewInvoiceModal').data('invoice-date'),
+							null
+						);
+					}
+					} else {
+					showError(response.message || translations.error_loading_cash_registers);
+				}
+			}
+		});
+	}
+	
+	
+	function populateCashRegisterFilter(cashRegisters) {
+		const $select = $('#cashRegisterFilter');
+		$select.empty();
+		
+		$select.append(`<option value="all">${translations.all}</option>`);
+		
+		if (cashRegisters && cashRegisters.length > 0) {
+			cashRegisters.forEach(register => {
+				$select.append(
+					`<option value="${register.code}">${register.text}</option>`
+				);
+			});
+		}
+		
+		if (!$select.hasClass('select2-hidden-accessible')) {
+			$select.select2({ width: '100%' });
+		}
+		
+		$select.val('all').trigger('change.select2');
+	}
+	
+	// Function to load daily items with optional cash register filter
+	function loadDailyItems(filename, invoiceDate, cashRegister = null, cashRegisterName = null) {
+		$.ajax({
+			url: 'includes/invoices/get_invoice_details.php',
+			type: 'GET',
+			data: { filename, cash_register: cashRegister },
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					hideLoadingState();
+					currentDailyData = response.data;
+					populateInvoiceModal(response.data, invoiceDate, cashRegisterName);
+					} else {
+					showError(response.message || translations.error_loading_data);
+				}
+			}
+		});
+	}
+	
+    
+    // Function to show loading state
+	function showLoadingState() {
+		$('#loadingState').removeClass('d-none');
+		$('#dailyItemsWrapper').addClass('d-none');
+		$('#emptyState').addClass('d-none');
+	}
+	
+	function hideLoadingState() {
+		$('#loadingState').addClass('d-none');
+		$('#dailyItemsWrapper').removeClass('d-none');
+	}
+    
+    // Function to populate the modal with daily items
+	function populateInvoiceModal(dailyData, invoiceDate = null, selectedCashRegister = null) {
 		// Format currency based on language
 		function formatCurrency(amount, lang) {
 			if (amount === null || amount === undefined || isNaN(amount)) return '0.00';
@@ -340,11 +437,32 @@ $(function () {
 		
 		// Format date for display
 		function formatDisplayDate(dateString, lang) {
-			if (!dateString) return 'Unknown date';
+			if (!dateString) return translations.unknown_date || 'Unknown date';
 			
-			var date = new Date(dateString + 'T00:00:00');
-			if (isNaN(date.getTime())) return dateString;
+			// First, try to parse the date string
+			var date;
 			
+			// Check if it's already a Date object or a string that can be parsed
+			if (dateString instanceof Date) {
+				date = dateString;
+				} else if (typeof dateString === 'string') {
+				// Try different date formats that might come from the database
+				date = new Date(dateString);
+				
+				// If that fails, try adding time component
+				if (isNaN(date.getTime())) {
+					date = new Date(dateString + 'T00:00:00');
+				}
+				
+				// If still fails, return the original string
+				if (isNaN(date.getTime())) {
+					return dateString;
+				}
+				} else {
+				return dateString;
+			}
+			
+			// Format based on language
 			if (lang === 'hu') {
 				return date.toLocaleDateString('hu-HU', {
 					year: 'numeric',
@@ -366,130 +484,135 @@ $(function () {
 			}
 		}
 		
+		// Use the passed invoiceDate if available, otherwise use dailyData.date
+		var actualDate = invoiceDate || dailyData.date;
+		
 		// Update summary information
-		var displayDate = formatDisplayDate(dailyData.date, userLang);
+		var displayDate = formatDisplayDate(actualDate, userLang);
 		$('#modalDate').text(displayDate);
-		$('#modalItemCount').text(dailyData.item_count || 0);
-		$('#modalDailyTotal').text(formatCurrency(dailyData.daily_total, userLang));
+		$('#modalDailyTotal').text(formatCurrency(dailyData.daily_total, userLang) + " RSD");
+		
+		// Update modal title
+		var title = `${translations.sold_items_this_day}: ${displayDate}`;
+		if (selectedCashRegister) {
+			title += ` - ${translations.cash_register}: ${selectedCashRegister}`;
+		}		
+		$('#viewInvoiceModalLabel').html(`<i class="bi bi-list-check me-2"></i>${title}`);
 		
 		// Populate items table
 		var itemsBody = $('#dailyItemsBody');
 		var emptyState = $('#emptyState');
+		var tableWrapper = $('#dailyItemsWrapper');
+		
+		itemsBody.empty();
 		
 		if (dailyData.items && dailyData.items.length > 0) {
-			itemsBody.empty();
 			emptyState.addClass('d-none');
+			tableWrapper.removeClass('d-none');
 			
 			var grandTotal = 0;
-			
 			dailyData.items.forEach(function(item, index) {
 				var itemTotal = item.TotalAmount || (item.UnitPrice * item.Quantity) || 0;
 				grandTotal += itemTotal;
 				
 				var row = `
-                <tr>
-				<td class="text-muted">${index + 1}</td>
-				<td>
-				<div class="item-name" title="${item.Name || ''}">${item.Name || 'Unknown item'}</div>
-				</td>
-				<td class="text-end">
+				<tr>
+                <td>${index + 1}</td>
+                <td>
+				<div class="item-name" title="${item.Name || ''}">${item.Name || translations.unknown_item}</div>
+                </td>
+                <td class="text-end">
 				<span class="number-cell">${formatNumber(item.Quantity, userLang)}</span>
-				</td>
-				<td class="text-end">
-				<span class="number-cell">${formatCurrency(item.UnitPrice, userLang)}</span>
-				</td>
-				<td class="text-end fw-semibold">
-				<span class="number-cell">${formatCurrency(itemTotal, userLang)}</span>
-				</td>
-                </tr>
+                </td>
+                <td class="text-end">
+				<span class="number-cell">${formatCurrency(item.UnitPrice, userLang)} RSD</span>
+                </td>
+                <td class="text-end fw-semibold">
+				<span class="number-cell">${formatCurrency(itemTotal, userLang)} RSD</span>
+                </td>
+				</tr>
 				`;
 				itemsBody.append(row);
 			});
 			
 			// Update grand total
-			$('#grandTotal').text(formatCurrency(grandTotal, userLang));
+			$('#grandTotal').text(formatCurrency(grandTotal, userLang) + " RSD");
 			
 			} else {
-			itemsBody.empty();
+			tableWrapper.addClass('d-none');
 			emptyState.removeClass('d-none');
-			$('#grandTotal').text('0.00');
 		}
-		
-		// Update modal title
-		$('#viewInvoiceModalLabel').html(`<i class="bi bi-list-check me-2"></i>Daily Items: ${displayDate}`);
 	}
-	
-	// Add CSS for better display
-	var style = document.createElement('style');
-	style.textContent = `
-    .item-name {
-	max-width: 300px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-    }
     
-    .number-cell {
-	font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
-	font-size: 0.9em;
-    }
-    
-    #dailyItemsTable tbody tr:hover {
-	background-color: rgba(0, 0, 0, 0.02);
-    }
-    
-    #dailyItemsTable td, #dailyItemsTable th {
-	padding: 0.5rem 0.75rem;
-    }
-    
-    @media (max-width: 768px) {
-	.item-name {
-	max-width: 200px;
-	}
-	
-	#dailyItemsTable {
-	font-size: 0.85rem;
-	}
-    }
-	`;
-	document.head.appendChild(style);
-	
-	// Helper function to extract date from filename
-	function extractDateFromFilename(filename) {
-		// Extract date from filename like "invoices_2025-12-18.json"
-		var match = filename.match(/(\d{4}-\d{2}-\d{2})/);
-		if (match) {
-			var date = new Date(match[1] + 'T00:00:00');
-			if (userLang === 'hu') {
-				return date.toLocaleDateString('hu-HU');
-				} else if (userLang === 'sr') {
-				return date.toLocaleDateString('sr-RS');
-				} else {
-				return date.toLocaleDateString('en-US');
-			}
-		}
-		return filename;
-	}
-	
-	// Export function (optional)
-	function exportDailyItems() {
-		// This would export the items table as CSV
-		alert('Export functionality would be implemented here');
-	}
-	
-	// Function to show error messages
-	function showError(message) {
-		$('#viewInvoiceModal .modal-body').html(`
-			<div class="alert alert-danger" role="alert">
+    // Function to show error messages
+    function showError(message) {
+		$('#modalBodyContent').html(`
+			<div id="errorState" class="text-center py-5">
+            <div class="alert alert-danger" role="alert">
 			<i class="bi bi-exclamation-triangle-fill me-2"></i>
 			${message}
-			</div>
-			<div class="text-center mt-3">
-			<button type="button" class="btn btn-primary" onclick="location.reload()">
-			<i class="bi bi-arrow-clockwise me-1"></i> Try Again
-			</button>
+            </div>
+            <button type="button" class="btn btn-primary mt-3" onclick="location.reload()">
+			<i class="bi bi-arrow-clockwise me-1"></i> ${translations.try_again}
+            </button>
 			</div>
 		`);
 	}
 	
+	$('#cashRegisterFilter')
+    .off('change')
+    .on('change', function () {
+        let selectedRegister = $(this).val();
+        let registerName = null;
+		if (selectedRegister && selectedRegister !== 'all') {
+			const reg = cashRegistersList.find(r => r.code === selectedRegister);
+			registerName = reg ? reg.name : selectedRegister;
+		}
+		
+        // Update modal title
+        const displayDate = $('#modalDate').text();
+		let title = `${translations.sold_items_this_day}: ${displayDate}`;
+		if (registerName) {
+			title += ` - ${translations.cash_register}: ${registerName}`;
+		}
+		$('#viewInvoiceModalLabel').html(`<i class="bi bi-list-check me-2"></i>${title}`);
+		
+        // Load items
+        if (currentFilename && $('#viewInvoiceModal').data('invoice-date')) {
+            showLoadingState();
+            loadDailyItems(
+				currentFilename,
+				$('#viewInvoiceModal').data('invoice-date'),
+				selectedRegister === 'all' ? null : selectedRegister,
+				registerName // <-- new parameter
+			);
+		}
+	});
+	
+	// Clear modal data when it's hidden
+	$(document).on('hidden.bs.modal', '#viewInvoiceModal', function () {
+		$(this).removeData('invoice-date');
+		currentDailyData = null;
+		currentFilename = null;
+		
+		var $select = $('#cashRegisterFilter');
+		if ($select.data('select2')) {
+			$select.val('all').trigger('change.select2');
+			} else {
+			$select.val('all');
+		}
+		
+		$('#modalDate').text('');
+		$('#modalDailyTotal').text('0.00');
+		$('#dailyItemsBody').empty();
+		$('#grandTotal').text('0.00');
+		
+		$('#viewInvoiceModalLabel').html(
+			`<i class="bi bi-list-check me-2"></i>${translations.daily_items}`
+		);
+		
+		hideLoadingState();
+	});
+	
+    
 });

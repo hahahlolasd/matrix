@@ -48,10 +48,6 @@
 	<!-- Back-to-top -->
 	<a href="#top" id="back-to-top"><i class="bi bi-chevron-double-up"></i></a>
 	
-	<?php 
-		if (loadAsset('invoice_modal', $host, $assets)) {
-			include './includes/invoices/invoice_modal.php';
-		} 
-	?>
+	<div id='dailyItemsModalContainer'></div>
 	
 <?php include './includes/scripts.php'; ?>	

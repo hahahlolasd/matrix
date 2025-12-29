@@ -193,6 +193,21 @@
 	"invoice" => "Számla",
 	"file" => "Fájl",
 	"download" => "Letöltés",
+	"sold_items_this_day" => "Eladott termékek ezen a napon",
+	"total_price" => "Végösszeg",
+	"total_sold_items" => "Összesen eladott termékek száma",
+	"product_name" => "Termék neve",
+	"quantity" => "Mennyiség",
+	"unit_price" => "Darabár",
+	"grand_total" => "Teljes végösszeg",
+	"no_items_found" => "Nincs találat",
+	"error_loading_data" => "Hiba merült fel a betöltésnél",
+	"unknown_date" => "Ismeretlen dátum",
+	"unknown_item" => "Ismeretlen tétel",
+	"try_again" => "Újrapróbálás",
+	"select_cash_register" => "Kassza kiválasztása",
+	"cash_register" => "Kassza",
+	"all" => "Összes",
 	
 	];
 ?>
